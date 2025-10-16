@@ -412,9 +412,11 @@ LLM_MODEL_COLLECTIONS = {
 def get_model_settings_collection(model_settings_collection_key: str) -> LlmUsageSettingsCollection:
     """Get the settings for the model."""
     try:
-        x = os.getenv(ENV_VAR_DOCQ_AZURE_OPENAI_API_BASE2)
-        if not x:
-            raise ValueError("Azure OpenAI API base 2 is missing")
+        # Only enforce Azure env var presence when an Azure collection is requested
+        if model_settings_collection_key.startswith("azure_"):
+            x = os.getenv(ENV_VAR_DOCQ_AZURE_OPENAI_API_BASE2)
+            if not x:
+                log.warning("Azure OpenAI API base 2 is missing but an Azure collection was requested.")
         return LLM_MODEL_COLLECTIONS[model_settings_collection_key]
     except KeyError as e:
         log.error(
