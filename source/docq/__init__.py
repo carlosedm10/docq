@@ -1,32 +1,36 @@
 """Docq module."""
-import importlib.metadata as __metadata__
+import importlib.metadata as _md
 
-if __package__ is not None:
-    _pkg_metadata = __metadata__.metadata(__package__).json
-    project_urls = {}
-    for item in _pkg_metadata["project_url"]:
-        key, value = item.split(", ")
-        project_urls[key] = value
-
-    # data from pyproject.toml
-    __version__ = _pkg_metadata["version"]  # version field
-    __version_str__ = str(__version__)
-    __summary__ = _pkg_metadata["summary"]  # description field
-    __description__ = _pkg_metadata["description"]  # readme field
-    __homepage_url__ = _pkg_metadata["home_page"]  # homepage field
-    __documentation_url__ = project_urls["Documentation"]  # documentation field
-    __repository_url__ = project_urls["Repository"]  # repository field
-    __author_email__ = _pkg_metadata["author_email"]  # authors field
-    __maintainer_email__ = _pkg_metadata["maintainer_email"]  # maintainers field
-else:
+if __package__ is None:
     raise ValueError("Package name is not defined")
 
-__all__ = [
-    "config",
-    "manage_users",
-    "manage_documents",
-    "manage_spaces",
-    "manage_sharing",
-    "setup",
-    "run_queries",
-]
+m = _md.metadata(__package__)
+
+def _first_available(*keys: str, default: str | None = None) -> str | None:
+    for k in keys:
+        v = m.get(k)
+        if v:
+            return v
+    return default
+
+# Project URLs come as repeated "Project-URL" headers
+project_urls_list = m.get_all("Project-URL") or []
+project_urls: dict[str, str] = {}
+for item in project_urls_list:
+    try:
+        key, value = item.split(", ", 1)
+        project_urls[key] = value
+    except ValueError:
+        continue
+
+__version__ = _first_available("Version", default="0.0.0")
+__version_str__ = str(__version__)
+__summary__ = _first_available("Summary", default="")
+__description__ = _first_available("Description", default="")
+
+# Different build backends name this field differently
+__homepage_url__ = _first_available("Home-page", "Homepage", "home_page", "home-page", default="https://docq.ai")
+__documentation_url__ = project_urls.get("Documentation", "https://docqai.github.io/docq")
+__repository_url__ = project_urls.get("Repository", "https://github.com/docqai/docq")
+__author_email__ = _first_available("Author-email", default="")
+__maintainer_email__ = _first_available("Maintainer-email", default="")
