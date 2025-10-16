@@ -8,6 +8,7 @@ import semantic_kernel
 
 # from autogen import AssistantAgent, UserProxyAgent
 from docq.model_selection.main import ModelCapability, get_model_settings_collection
+from docq.config import ENV_VAR_DOCQ_AZURE_OPENAI_API_BASE2, ENV_VAR_DOCQ_GROQ_API_KEY
 from opentelemetry import trace
 from semantic_kernel.core_skills import ConversationSummarySkill, TextSkill, TimeSkill
 
@@ -45,7 +46,17 @@ logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
 config_list: List[Dict[str, str]] = []
 
-chat_model_settings = get_model_settings_collection("azure_openai_latest").model_usage_settings[ModelCapability.CHAT]
+# Select model collection based on available env vars; default to OpenAI
+if os.getenv("DOCQ_OPENAI_API_KEY"):
+    collection_key = "openai_latest"
+elif os.getenv(ENV_VAR_DOCQ_GROQ_API_KEY):
+    collection_key = "groq_llama3_70b_with_local_embedding"
+elif os.getenv(ENV_VAR_DOCQ_AZURE_OPENAI_API_BASE2):
+    collection_key = "azure_openai_latest"
+else:
+    collection_key = "openai_latest"
+
+chat_model_settings = get_model_settings_collection(collection_key).model_usage_settings[ModelCapability.CHAT]
 
 config_list.append(get_autogen_llm_config(chat_model_settings))
 
