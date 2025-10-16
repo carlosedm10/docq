@@ -24,7 +24,15 @@ from . import (
     threads_handler,  # noqa: F401 DO NOT REMOVE
     token_handler,  # noqa: F401 DO NOT REMOVE
 )
-from .integration.slack import index_handler  # noqa: F401 DO NOT REMOVE
+import logging
+
+# Slack integration is optional; only import if available/configured
+try:  # noqa: SIM105
+    from .integration.slack import index_handler  # noqa: F401 DO NOT REMOVE
+    _slack_available = True
+except Exception as e:  # broad to avoid hard-failing when slack deps/env missing
+    logging.warning("Slack integration not available: %s", e)
+    _slack_available = False
 
 __all__ = [
     "chat_completion_handler",
@@ -34,8 +42,10 @@ __all__ = [
     "spaces_files_handler",
     "threads_handler",
     "token_handler",
-    "index_handler",
 ]
+
+if _slack_available:
+    __all__.append("index_handler")
 
 
 def setup() -> None:
